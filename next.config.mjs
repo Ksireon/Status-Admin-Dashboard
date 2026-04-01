@@ -4,9 +4,9 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://64.112.127.107:3000/api/:path*',
+        destination: 'http://64.112.127.107:3000/api/v1/:path*',
       },
-    ]
+    ];
   },
   async headers() {
     return [
@@ -19,8 +19,8 @@ const nextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;

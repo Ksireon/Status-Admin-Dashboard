@@ -32,7 +32,7 @@ export default function NewProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState('');
-  
+
   const [formData, setFormData] = useState<ProductFormData>({
     categoryId: '',
     type: 'textile',
@@ -54,7 +54,7 @@ export default function NewProductPage() {
         const data = await api.get<Category[]>('/admin/categories');
         setCategories(data);
         if (data.length > 0) {
-          setFormData(prev => ({ ...prev, categoryId: data[0].id }));
+          setFormData((prev) => ({ ...prev, categoryId: data[0].id }));
         }
       } catch (err) {
         console.error('Failed to fetch categories:', err);
@@ -101,17 +101,22 @@ export default function NewProductPage() {
             const formDataUpload = new FormData();
             formDataUpload.append('image', image.file);
             formDataUpload.append('label', image.label || '');
-            
-            const uploadResponse = await fetch(`http://64.112.127.107:3000/api/v1/admin/products/${productId}/images/upload`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+
+            const uploadResponse = await fetch(
+              `/api/admin/products/${productId}/images/upload`,
+              {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                },
+                body: formDataUpload,
               },
-              body: formDataUpload,
-            });
-            
+            );
+
             if (!uploadResponse.ok) {
-              const errorData = await uploadResponse.json().catch(() => ({ message: 'Upload failed' }));
+              const errorData = await uploadResponse
+                .json()
+                .catch(() => ({ message: 'Upload failed' }));
               console.error('Image upload failed:', errorData);
             }
           } else if (image.url) {
@@ -134,14 +139,14 @@ export default function NewProductPage() {
 
   const handleImageUpload = (file: File, label: string) => {
     const preview = URL.createObjectURL(file);
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       images: [...prev.images, { file, label, preview }],
     }));
   };
 
   const handleImageRemove = (index: number) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newImages = [...prev.images];
       // Revoke object URL to prevent memory leaks
       if (newImages[index].preview) {
@@ -163,10 +168,15 @@ export default function NewProductPage() {
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/dashboard/products" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+        <Link
+          href="/dashboard/products"
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+        >
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Product</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Add New Product
+        </h1>
       </div>
 
       <Card>
@@ -184,7 +194,12 @@ export default function NewProductPage() {
               </label>
               <select
                 value={formData.categoryId}
-                onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    categoryId: e.target.value,
+                  }))
+                }
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 required
               >
@@ -203,7 +218,12 @@ export default function NewProductPage() {
               </label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as any }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    type: e.target.value as any,
+                  }))
+                }
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-blue"
                 required
               >
@@ -220,7 +240,9 @@ export default function NewProductPage() {
             </label>
             <Input
               value={formData.nameRu}
-              onChange={(e) => setFormData(prev => ({ ...prev, nameRu: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, nameRu: e.target.value }))
+              }
               placeholder="Enter product name in Russian"
               required
             />
@@ -233,7 +255,9 @@ export default function NewProductPage() {
               </label>
               <Input
                 value={formData.nameUz}
-                onChange={(e) => setFormData(prev => ({ ...prev, nameUz: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, nameUz: e.target.value }))
+                }
                 placeholder="Enter product name in Uzbek"
               />
             </div>
@@ -244,7 +268,9 @@ export default function NewProductPage() {
               </label>
               <Input
                 value={formData.nameEn}
-                onChange={(e) => setFormData(prev => ({ ...prev, nameEn: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, nameEn: e.target.value }))
+                }
                 placeholder="Enter product name in English"
               />
             </div>
@@ -256,7 +282,12 @@ export default function NewProductPage() {
             </label>
             <textarea
               value={formData.descriptionRu}
-              onChange={(e) => setFormData(prev => ({ ...prev, descriptionRu: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  descriptionRu: e.target.value,
+                }))
+              }
               placeholder="Enter description in Russian"
               rows={3}
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-blue"
@@ -270,7 +301,12 @@ export default function NewProductPage() {
               </label>
               <textarea
                 value={formData.descriptionUz}
-                onChange={(e) => setFormData(prev => ({ ...prev, descriptionUz: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    descriptionUz: e.target.value,
+                  }))
+                }
                 placeholder="Enter description in Uzbek"
                 rows={3}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-blue"
@@ -283,7 +319,12 @@ export default function NewProductPage() {
               </label>
               <textarea
                 value={formData.descriptionEn}
-                onChange={(e) => setFormData(prev => ({ ...prev, descriptionEn: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    descriptionEn: e.target.value,
+                  }))
+                }
                 placeholder="Enter description in English"
                 rows={3}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-blue"
@@ -299,7 +340,12 @@ export default function NewProductPage() {
               <Input
                 type="number"
                 value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    price: Number(e.target.value),
+                  }))
+                }
                 placeholder="0"
                 required
                 min="0"
@@ -313,7 +359,12 @@ export default function NewProductPage() {
               <Input
                 type="number"
                 value={formData.stockQuantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, stockQuantity: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    stockQuantity: Number(e.target.value),
+                  }))
+                }
                 placeholder="0"
                 required
                 min="0"
@@ -326,10 +377,17 @@ export default function NewProductPage() {
               <input
                 type="checkbox"
                 checked={formData.isActive}
-                onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    isActive: e.target.checked,
+                  }))
+                }
                 className="w-4 h-4 text-accent-blue rounded border-gray-300 focus:ring-accent-blue"
               />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</span>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Active
+              </span>
             </label>
           </div>
 

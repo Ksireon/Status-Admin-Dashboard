@@ -18,6 +18,8 @@ export function useSocket(options: UseSocketOptions = {}) {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
+    // Для WebSocket unfortunately нужен прямой IP, т.к. Vercel не поддерживает WS proxy
+    // В production рекомендуется использовать wss:// (WebSocket Secure)
     const socket = io(`http://64.112.127.107:3000/${options.namespace || ''}`, {
       auth: {
         token: `Bearer ${token}`,
@@ -62,15 +64,21 @@ export function useSocket(options: UseSocketOptions = {}) {
     });
   }, []);
 
-  const on = useCallback((event: string, callback: (...args: any[]) => void) => {
-    if (!socketRef.current) return;
-    socketRef.current.on(event, callback);
-  }, []);
+  const on = useCallback(
+    (event: string, callback: (...args: any[]) => void) => {
+      if (!socketRef.current) return;
+      socketRef.current.on(event, callback);
+    },
+    [],
+  );
 
-  const off = useCallback((event: string, callback?: (...args: any[]) => void) => {
-    if (!socketRef.current) return;
-    socketRef.current.off(event, callback);
-  }, []);
+  const off = useCallback(
+    (event: string, callback?: (...args: any[]) => void) => {
+      if (!socketRef.current) return;
+      socketRef.current.off(event, callback);
+    },
+    [],
+  );
 
   return {
     socket: socketRef.current,
