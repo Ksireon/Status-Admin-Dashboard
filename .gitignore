@@ -1,5 +1,6 @@
-# Dependencies
+
 node_modules
+<<<<<<< HEAD
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -39,3 +40,6 @@ coverage
 
 # Misc
 *.local
+=======
+admin-dashboard/node_modules
+>>>>>>> b54b392a6018322c480413077472b3ac16420373
