@@ -18,13 +18,14 @@ export function useSocket(options: UseSocketOptions = {}) {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    // Для WebSocket unfortunately нужен прямой IP, т.к. Vercel не поддерживает WS proxy
-    // В production рекомендуется использовать wss:// (WebSocket Secure)
+    // Используем только polling для работы с HTTP бэкендом из HTTPS страницы
+    // WebSocket (ws://) блокируется браузером при Mixed Content (HTTPS -> HTTP)
     const socket = io(`http://64.112.127.107:3000/${options.namespace || ''}`, {
       auth: {
         token: `Bearer ${token}`,
       },
-      transports: ['websocket', 'polling'],
+      transports: ['polling'],
+      withCredentials: true,
     });
 
     socketRef.current = socket;
