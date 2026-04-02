@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { api } from '@/lib/api';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { User, Search, Plus, Edit, Trash2, X, Check } from 'lucide-react';
-import { RoleGuard } from '@/components/guards/RoleGuard';
+import React, { useState, useEffect } from "react";
+import { api } from "@/lib/api";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { User, Search, Plus, Edit, Trash2, X, Check } from "lucide-react";
+import { RoleGuard } from "@/components/guards/RoleGuard";
 
 interface UserData {
   id: string;
@@ -32,18 +32,18 @@ export default function UsersPage() {
   const [shops, setShops] = useState<Shop[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  
+  const [search, setSearch] = useState("");
+
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    role: 'MANAGER',
-    phone: '',
-    shopId: '',
+    email: "",
+    password: "",
+    name: "",
+    role: "MANAGER",
+    phone: "",
+    shopId: "",
     isActive: true,
   });
 
@@ -55,11 +55,11 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const data: any = await api.get('/admin/users');
+      const data: any = await api.get("/admin/users");
       setUsers(data.data || data || []);
     } catch (err: any) {
-      console.error('Failed to fetch users:', err);
-      setError(err.message || 'Failed to fetch users');
+      console.error("Failed to fetch users:", err);
+      setError(err.message || "Failed to fetch users");
     } finally {
       setIsLoading(false);
     }
@@ -67,17 +67,17 @@ export default function UsersPage() {
 
   const fetchShops = async () => {
     try {
-      const data: any = await api.get('/admin/shops');
+      const data: any = await api.get("/admin/shops");
       setShops(data.data || data || []);
     } catch (err) {
-      console.error('Failed to fetch shops:', err);
+      console.error("Failed to fetch shops:", err);
     }
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/admin/users', {
+      await api.post("/admin/users", {
         email: formData.email,
         password: formData.password,
         name: formData.name || undefined,
@@ -85,12 +85,12 @@ export default function UsersPage() {
         phone: formData.phone || undefined,
         shopId: formData.shopId || undefined,
       });
-      
+
       resetForm();
       setIsCreating(false);
       fetchUsers();
     } catch (err: any) {
-      setError(err.message || 'Failed to create user');
+      setError(err.message || "Failed to create user");
     }
   };
 
@@ -107,23 +107,23 @@ export default function UsersPage() {
         shopId: formData.shopId || undefined,
         isActive: formData.isActive,
       });
-      
+
       resetForm();
       setEditingId(null);
       fetchUsers();
     } catch (err: any) {
-      setError(err.message || 'Failed to update user');
+      setError(err.message || "Failed to update user");
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to deactivate this user?')) return;
+    if (!confirm("Are you sure you want to deactivate this user?")) return;
 
     try {
       await api.delete(`/admin/users/${id}`);
       fetchUsers();
     } catch (err: any) {
-      setError(err.message || 'Failed to delete user');
+      setError(err.message || "Failed to delete user");
     }
   };
 
@@ -131,23 +131,23 @@ export default function UsersPage() {
     setEditingId(user.id);
     setFormData({
       email: user.email,
-      password: '',
-      name: user.name || '',
+      password: "",
+      name: user.name || "",
       role: user.role,
-      phone: user.phone || '',
-      shopId: user.shopId || '',
+      phone: user.phone || "",
+      shopId: user.shopId || "",
       isActive: user.isActive,
     });
   };
 
   const resetForm = () => {
     setFormData({
-      email: '',
-      password: '',
-      name: '',
-      role: 'MANAGER',
-      phone: '',
-      shopId: '',
+      email: "",
+      password: "",
+      name: "",
+      role: "MANAGER",
+      phone: "",
+      shopId: "",
       isActive: true,
     });
     setError(null);
@@ -159,9 +159,11 @@ export default function UsersPage() {
     resetForm();
   };
 
-  const filteredUsers = users.filter(user => 
-    user.email.toLowerCase().includes(search.toLowerCase()) ||
-    (user.name && user.name.toLowerCase().includes(search.toLowerCase()))
+  const filteredUsers = users.filter(
+    (user) =>
+      user.role !== "USER" &&
+      (user.email.toLowerCase().includes(search.toLowerCase()) ||
+        (user.name && user.name.toLowerCase().includes(search.toLowerCase()))),
   );
 
   if (isLoading) {
@@ -178,7 +180,9 @@ export default function UsersPage() {
     <RoleGuard requiredRole="OWNER">
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Users Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Users Management
+          </h1>
           {!isCreating && (
             <Button onClick={() => setIsCreating(true)}>
               <Plus size={18} className="mr-2" />
@@ -190,14 +194,22 @@ export default function UsersPage() {
         {error && (
           <div className="mb-4 p-4 rounded-lg bg-accent-red/10 border border-accent-red/30 text-accent-red">
             {error}
-            <button onClick={() => setError(null)} className="ml-2 text-sm underline">Dismiss</button>
+            <button
+              onClick={() => setError(null)}
+              className="ml-2 text-sm underline"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
         {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={18}
+            />
             <Input
               placeholder="Search users..."
               value={search}
@@ -211,8 +223,10 @@ export default function UsersPage() {
         {isCreating && (
           <Card className="mb-6">
             <form onSubmit={handleCreate} className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create New User</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Create New User
+              </h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -221,7 +235,12 @@ export default function UsersPage() {
                   <Input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
                     placeholder="user@example.com"
                     required
                   />
@@ -233,7 +252,12 @@ export default function UsersPage() {
                   <Input
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        password: e.target.value,
+                      }))
+                    }
                     placeholder="••••••••"
                     required
                   />
@@ -247,7 +271,9 @@ export default function UsersPage() {
                   </label>
                   <Input
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    }
                     placeholder="Full name"
                   />
                 </div>
@@ -257,7 +283,12 @@ export default function UsersPage() {
                   </label>
                   <Input
                     value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
                     placeholder="+998901234567"
                   />
                 </div>
@@ -270,7 +301,9 @@ export default function UsersPage() {
                   </label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, role: e.target.value }))
+                    }
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-blue"
                     required
                   >
@@ -285,7 +318,12 @@ export default function UsersPage() {
                   </label>
                   <select
                     value={formData.shopId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, shopId: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        shopId: e.target.value,
+                      }))
+                    }
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-accent-blue"
                   >
                     <option value="">No shop</option>
@@ -339,27 +377,48 @@ export default function UsersPage() {
                           <form onSubmit={handleUpdate} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Email
+                                </label>
                                 <Input
                                   type="email"
                                   value={formData.email}
-                                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      email: e.target.value,
+                                    }))
+                                  }
                                   required
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Name
+                                </label>
                                 <Input
                                   value={formData.name}
-                                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      name: e.target.value,
+                                    }))
+                                  }
                                   placeholder="Full name"
                                 />
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Phone</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Phone
+                                </label>
                                 <Input
                                   value={formData.phone}
-                                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      phone: e.target.value,
+                                    }))
+                                  }
                                   placeholder="+998901234567"
                                 />
                               </div>
@@ -367,23 +426,39 @@ export default function UsersPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Role</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Role
+                                </label>
                                 <select
                                   value={formData.role}
-                                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value }))}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      role: e.target.value,
+                                    }))
+                                  }
                                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
                                   required
                                 >
                                   <option value="MANAGER">Manager</option>
-                                  <option value="BRANCH_DIRECTOR">Branch Director</option>
+                                  <option value="BRANCH_DIRECTOR">
+                                    Branch Director
+                                  </option>
                                   <option value="OWNER">Owner</option>
                                 </select>
                               </div>
                               <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1">Shop</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1">
+                                  Shop
+                                </label>
                                 <select
                                   value={formData.shopId}
-                                  onChange={(e) => setFormData(prev => ({ ...prev, shopId: e.target.value }))}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      shopId: e.target.value,
+                                    }))
+                                  }
                                   className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm"
                                 >
                                   <option value="">No shop</option>
@@ -399,7 +474,12 @@ export default function UsersPage() {
                                   <input
                                     type="checkbox"
                                     checked={formData.isActive}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                                    onChange={(e) =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        isActive: e.target.checked,
+                                      }))
+                                    }
                                     className="w-4 h-4 text-accent-blue rounded"
                                   />
                                   <span className="text-sm">Active</span>
@@ -412,7 +492,12 @@ export default function UsersPage() {
                                 <Check size={14} className="mr-1" />
                                 Save Changes
                               </Button>
-                              <Button type="button" variant="secondary" size="sm" onClick={cancelEdit}>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={cancelEdit}
+                              >
                                 <X size={14} className="mr-1" />
                                 Cancel
                               </Button>
@@ -429,31 +514,48 @@ export default function UsersPage() {
                               <User size={20} className="text-accent-blue" />
                             </div>
                             <div>
-                              <p className="font-medium text-gray-900 dark:text-white">{user.name || 'No name'}</p>
-                              <p className="text-xs text-gray-500">{user.email}</p>
-                              {user.phone && <p className="text-xs text-gray-400">{user.phone}</p>}
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {user.name || "No name"}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {user.email}
+                              </p>
+                              {user.phone && (
+                                <p className="text-xs text-gray-400">
+                                  {user.phone}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.role === 'OWNER' ? 'bg-accent-red/10 text-accent-red' :
-                            user.role === 'BRANCH_DIRECTOR' ? 'bg-accent-amber/10 text-accent-amber' :
-                            'bg-accent-blue/10 text-accent-blue'
-                          }`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              user.role === "OWNER"
+                                ? "bg-accent-red/10 text-accent-red"
+                                : user.role === "BRANCH_DIRECTOR"
+                                  ? "bg-accent-amber/10 text-accent-amber"
+                                  : "bg-accent-blue/10 text-accent-blue"
+                            }`}
+                          >
                             {user.role}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          {user.shopId ? shops.find(s => s.id === user.shopId)?.name.ru || 'Unknown' : '-'}
+                          {user.shopId
+                            ? shops.find((s) => s.id === user.shopId)?.name
+                                .ru || "Unknown"
+                            : "-"}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            user.isActive 
-                              ? 'bg-accent-green/10 text-accent-green' 
-                              : 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400'
-                          }`}>
-                            {user.isActive ? 'Active' : 'Inactive'}
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              user.isActive
+                                ? "bg-accent-green/10 text-accent-green"
+                                : "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400"
+                            }`}
+                          >
+                            {user.isActive ? "Active" : "Inactive"}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -484,7 +586,9 @@ export default function UsersPage() {
 
           {filteredUsers.length === 0 && !isCreating && (
             <div className="text-center py-12 text-gray-500">
-              {search ? 'No users found matching your search.' : 'No users found. Click "Add User" to create one.'}
+              {search
+                ? "No users found matching your search."
+                : 'No users found. Click "Add User" to create one.'}
             </div>
           )}
         </Card>
