@@ -36,7 +36,7 @@ export interface LocalizedText {
 export interface Category {
   id: string;
   slug: string;
-  name: LocalizedText;
+  name: LocalizedText | string;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,9 +52,9 @@ export interface Product {
   id: string;
   categoryId: string;
   type: 'textile' | 'vinyl' | 'bag';
-  name: LocalizedText;
-  description: LocalizedText;
-  characteristics: Record<string, LocalizedText>;
+  name: LocalizedText | string;
+  description: LocalizedText | string;
+  characteristics: Record<string, LocalizedText> | string;
   price: number;
   stockQuantity: number;
   isActive: boolean;
@@ -66,12 +66,17 @@ export interface Product {
 export interface OrderItem {
   id: string;
   productId: string;
-  productName: LocalizedText;
-  productPrice: number;
+  nameSnapshot: LocalizedText | string;  // Название продукта на момент заказа
+  descriptionSnapshot?: LocalizedText | string;
+  typeSnapshot: string;
+  imageSnapshot: string | null;  // Картинка на момент заказа
+  colorLabel: string | null;    // Выбранный цвет
+  size: string | null;
+  unitPrice: number;            // Цена на момент заказа
   quantity: number;
-  meters?: number;
-  color?: string;
+  meters: number | null;
   lineTotal: number;
+  createdAt: string;
 }
 
 export interface Order {
@@ -95,7 +100,7 @@ export interface Order {
 export interface Shop {
   id: string;
   key: string;
-  name: LocalizedText;
+  name: LocalizedText | string;
   city: string;
   address: string;
   phone: string;
@@ -133,7 +138,7 @@ export interface DashboardStats {
   ordersByStatus: { status: OrderStatusType; count: number }[];
   topProducts: {
     productId: string;
-    name: LocalizedText;
+    name: LocalizedText | string;
     totalRevenue: number;
     totalQuantity: number;
   }[];

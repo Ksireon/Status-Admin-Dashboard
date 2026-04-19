@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Order, OrderStatusType } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { OrderStatusLabels, OrderStatusColors } from '@/lib/constants';
-import { ArrowLeft, Package, User, MapPin, CreditCard, MessageSquare } from 'lucide-react';
+import { OrderStatusLabels, OrderStatusColors, getImageUrl } from '@/lib/constants';
+import { ArrowLeft, Package, User, MapPin, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 
@@ -16,7 +15,6 @@ const statusFlow: OrderStatusType[] = ['PENDING', 'PROCESSING', 'DELIVERING', 'C
 
 export default function OrderDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const { hasRole } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,8 +23,10 @@ export default function OrderDetailPage() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const data = await api.get<Order>(`/admin/orders/${params.id}`);
-        setOrder(data);
+        const orderData = await api.get<Order>(`/admin/orders/${params.id}`);
+        console.log('Order data:', orderData);
+        console.log('Order items:', orderData.items);
+        setOrder(orderData);
       } catch (error) {
         console.error('Failed to fetch order:', error);
       } finally {
@@ -50,7 +50,8 @@ export default function OrderDetailPage() {
     }
   };
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || isNaN(value)) return 'N/A';
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: 'UZS',
@@ -107,18 +108,64 @@ export default function OrderDetailPage() {
           <Card title="Order Items">
             <div className="space-y-4">
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{item.productName.ru}</p>
-                    <p className="text-sm text-gray-500">
-                      {item.quantity} x {formatCurrency(item.productPrice)}
-                      {item.color && ` · Color: ${item.color}`}
-                      {item.meters && ` · ${item.meters}m`}
+                <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                  {/* Product Image */}
+                  <div className="w-16 h-16 flex-shrink-0">
+                    {item.imageSnapshot ? (
+                      <img
+                        src={getImageUrl(item.imageSnapshot) || ''}
+                        alt={item.nameSnapshot?.ru || 'Product'}
+                        className="w-full h-full rounded-lg object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          const parent = (e.target as HTMLImageElement).parentElement;
+                          if (parent) {
+                            parent.innerHTML = '';
+                            const fallbackDiv = document.createElement('div');
+                            fallbackDiv.className = 'w-full h-full rounded-lg bg-gray-200 dark:bg-slate-600 flex items-center justify-center';
+                            fallbackDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M20 7l-8-5-8 5"></path><path d="M20 17l-8 5-8-5"></path></svg>';
+                            parent.appendChild(fallbackDiv);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-lg bg-gray-200 dark:bg-slate-600 flex items-center justify-center">
+                        <Package size={24} className="text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Product Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-white truncate">
+                      {item.nameSnapshot?.ru || item.nameSnapshot?.uz || item.nameSnapshot?.en || 'Unknown Product'}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mt-1">
+                      <span>Quantity: <span className="font-medium text-gray-700 dark:text-gray-300">{item.quantity}</span></span>
+                      {item.colorLabel && (
+                        <span className="flex items-center gap-1">
+                          Color: 
+                          <span className="flex items-center gap-1">
+                            <span 
+                              className="w-3 h-3 rounded-full border border-gray-300" 
+                              style={{ backgroundColor: item.colorLabel }}
+                            />
+                            {item.colorLabel}
+                          </span>
+                        </span>
+                      )}
+                      {item.size && <span>Size: {item.size}</span>}
+                      {item.meters && <span>Meters: {item.meters}m</span>}
+                      <span>Unit Price: {formatCurrency(item.unitPrice)}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Line Total */}
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900 dark:text-white text-lg">
+                      {formatCurrency(item.lineTotal)}
                     </p>
                   </div>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(item.lineTotal)}
-                  </p>
                 </div>
               ))}
             </div>
@@ -185,7 +232,7 @@ export default function OrderDetailPage() {
               <div className="flex items-center gap-3">
                 <Package size={18} className="text-gray-400" />
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">{order.shop.name.ru}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{order.shop.name?.ru || 'Unknown'}</p>
                 </div>
               </div>
             </div>
@@ -200,6 +247,33 @@ export default function OrderDetailPage() {
               </div>
             </div>
           </Card>
+
+          <Card title="Order Details">
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Order ID:</span>
+                <span className="text-gray-900 dark:text-white font-mono">{order.id}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Created:</span>
+                <span className="text-gray-900 dark:text-white">{new Date(order.createdAt).toLocaleString('ru-RU')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Updated:</span>
+                <span className="text-gray-900 dark:text-white">{new Date(order.updatedAt).toLocaleString('ru-RU')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Items count:</span>
+                <span className="text-gray-900 dark:text-white">{order.items.length}</span>
+              </div>
+            </div>
+          </Card>
+
+          {order.comment && (
+            <Card title="Comment">
+              <p className="text-sm text-gray-700 dark:text-gray-300">{order.comment}</p>
+            </Card>
+          )}
 
           {canUpdateStatus && nextStatus && (
             <Card title="Actions">

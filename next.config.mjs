@@ -12,25 +12,23 @@ const nextConfig = {
       },
     ];
   },
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-        ],
-      },
-    ];
-  },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'status-admin-dashboard.vercel.app',
+        protocol: 'http',
+        hostname: '64.112.127.107',
+        port: '3000',
         pathname: '/uploads/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3000',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
       },
     ],
   },
