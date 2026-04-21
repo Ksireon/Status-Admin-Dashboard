@@ -15,6 +15,7 @@ export default function SupportPage() {
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch threads initially
   useEffect(() => {
     const fetchThreads = async () => {
       try {
@@ -28,6 +29,27 @@ export default function SupportPage() {
     };
     fetchThreads();
   }, []);
+
+  // Auto-refresh threads and selected thread messages every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        // Refresh threads list
+        const data = await api.get<SupportThread[]>('/admin/support/threads');
+        setThreads(data);
+        
+        // Refresh selected thread if any
+        if (selectedThread) {
+          const updated = await api.get<SupportThread>(`/admin/support/threads/${selectedThread.id}`);
+          setSelectedThread(updated);
+        }
+      } catch (error) {
+        console.error('Failed to refresh data:', error);
+      }
+    }, 3000); // Refresh every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedThread]);
 
   const sendMessage = async () => {
     if (!selectedThread || !message.trim()) return;
@@ -97,7 +119,23 @@ export default function SupportPage() {
                     <p className="text-sm text-gray-500">Thread #{selectedThread.id.slice(0, 8)}</p>
                   </div>
                   {selectedThread.isOpen && (
-                    <Button variant="secondary" size="sm">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await api.patch(`/admin/support/threads/${selectedThread.id}/close`, {});
+                          // Refresh thread
+                          const updated = await api.get<SupportThread>(`/admin/support/threads/${selectedThread.id}`);
+                          setSelectedThread(updated);
+                          // Refresh threads list
+                          const threadsData = await api.get<SupportThread[]>('/admin/support/threads');
+                          setThreads(threadsData);
+                        } catch (error) {
+                          console.error('Failed to close thread:', error);
+                        }
+                      }}
+                    >
                       <CheckCircle size={16} className="mr-2" />
                       Close Thread
                     </Button>
@@ -117,6 +155,9 @@ export default function SupportPage() {
                             : 'bg-accent-blue text-white'
                         }`}
                       >
+                        <p className="text-xs opacity-75 mb-1">
+                          {msg.isFromUser ? 'User' : 'Admin'}
+                        </p>
                         <p>{msg.text}</p>
                         <p className={`text-xs mt-1 ${msg.isFromUser ? 'text-gray-500' : 'text-blue-200'}`}>
                           {new Date(msg.createdAt).toLocaleTimeString()}

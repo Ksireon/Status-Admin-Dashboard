@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedUser && accessToken) {
       setUser(JSON.parse(storedUser));
       api.setAccessToken(accessToken);
+      // Session will be validated by ApiClient constructor via refreshToken
     }
     
     setIsLoading(false);
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isLoading,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && api.isAuthenticated(),
         login,
         logout,
         hasRole,

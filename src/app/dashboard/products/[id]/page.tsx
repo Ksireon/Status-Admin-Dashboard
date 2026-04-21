@@ -1,14 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Product, Category } from '@/lib/types';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Upload, X, GripVertical } from 'lucide-react';
 import Link from 'next/link';
+import { getImageUrl } from '@/lib/constants';
 
 interface ProductFormData {
   categoryId: string;
@@ -33,7 +34,10 @@ export default function EditProductPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState<ProductFormData>({
     categoryId: '',
@@ -124,49 +128,11 @@ export default function EditProductPage() {
     }
   };
 
-  const addImageField = () => {
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, { url: '', label: '' }],
-    }));
-  };
-
-  const removeImageField = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-  };
-
   const updateImageField = (index: number, field: 'url' | 'label', value: string) => {
     setFormData(prev => ({
       ...prev,
       images: prev.images.map((img, i) => i === index ? { ...img, [field]: value } : img),
     }));
-  };
-
-  const handleAddImage = async (index: number) => {
-    const image = formData.images[index];
-    if (!image.url.trim()) return;
-
-    try {
-      await api.post(`/admin/products/${productId}/images`, {
-        url: image.url,
-        label: image.label,
-      });
-      // Refresh product data
-      const updatedProduct = await api.get<Product>(`/admin/products/${productId}`);
-      setFormData(prev => ({
-        ...prev,
-        images: updatedProduct.images?.map(img => ({ 
-          url: img.url, 
-          label: img.label || '', 
-          id: img.id 
-        })) || [],
-      }));
-    } catch (err: any) {
-      setError(err.message || 'Failed to add image');
-    }
   };
 
   const handleDeleteImage = async (imageId: string) => {
@@ -180,6 +146,126 @@ export default function EditProductPage() {
       }));
     } catch (err: any) {
       setError(err.message || 'Failed to delete image');
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await api.uploadFile(`/admin/products/${productId}/images/upload`, formData);
+
+      // Refresh product data to get updated images
+      const updatedProduct = await api.get<Product>(`/admin/products/${productId}`);
+      setFormData(prev => ({
+        ...prev,
+        images: updatedProduct.images?.map(img => ({
+          url: img.url,
+          label: img.label || '',
+          id: img.id
+        })) || [],
+      }));
+    } catch (err: any) {
+      console.error('Failed to upload image:', err);
+      setError(err.message || 'Failed to upload image');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleUpdateImageSort = async (imageId: string, newSort: number) => {
+    try {
+      await api.patch(`/admin/product-images/${imageId}`, { sort: newSort });
+      // Refresh to get updated order
+      const updatedProduct = await api.get<Product>(`/admin/products/${productId}`);
+      setFormData(prev => ({
+        ...prev,
+        images: updatedProduct.images?.map(img => ({
+          url: img.url,
+          label: img.label || '',
+          id: img.id
+        })) || [],
+      }));
+    } catch (err: any) {
+      setError(err.message || 'Failed to update image order');
+    }
+  };
+
+  const handleAddImageByUrl = async () => {
+    const url = imageUrlInput.trim();
+    
+    if (!url) {
+      setError('Please enter an image URL');
+      return;
+    }
+
+    // Validate URL format
+    let validatedUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      // If URL doesn't have protocol, add https://
+      validatedUrl = 'https://' + url;
+    }
+
+    try {
+      new URL(validatedUrl);
+    } catch {
+      setError('Please enter a valid URL (e.g., https://example.com/image.jpg)');
+      return;
+    }
+
+    setIsUploading(true);
+    setError('');
+
+    try {
+      console.log('Adding image URL:', validatedUrl);
+      const result = await api.post(`/admin/products/${productId}/images`, {
+        url: validatedUrl,
+        label: '',
+      });
+      console.log('Image added result:', result);
+
+      // Refresh product data to get updated images
+      const updatedProduct = await api.get<Product>(`/admin/products/${productId}`);
+      console.log('Updated product images:', updatedProduct.images);
+      setFormData(prev => ({
+        ...prev,
+        images: updatedProduct.images?.map(img => ({
+          url: img.url,
+          label: img.label || '',
+          id: img.id
+        })) || [],
+      }));
+
+      // Clear input
+      setImageUrlInput('');
+    } catch (err: any) {
+      console.error('Failed to add image by URL:', err);
+      setError(err.message || 'Failed to add image');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -362,6 +448,117 @@ export default function EditProductPage() {
               />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active</span>
             </label>
+          </div>
+
+          {/* Product Images Section */}
+          <div className="pt-6 border-t border-gray-200 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Product Images</h3>
+              <div className="flex gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  isLoading={isUploading}
+                  disabled={isUploading}
+                >
+                  <Upload size={16} className="mr-2" />
+                  {isUploading ? 'Uploading...' : 'Upload Image'}
+                </Button>
+              </div>
+            </div>
+
+            {formData.images.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 dark:bg-slate-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600">
+                <p className="text-gray-500 dark:text-gray-400">No images yet. Upload an image to get started.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {formData.images.map((image, index) => (
+                  <div
+                    key={image.id || index}
+                    className="relative group bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-600 overflow-hidden"
+                  >
+                    {/* Image Preview */}
+                    <div className="aspect-square relative">
+                      <img
+                        src={getImageUrl(image.url) || ''}
+                        alt={image.label || `Product image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23e5e7eb%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 text-anchor=%22middle%22 alignment-baseline=%22middle%22 fill=%22%239ca3af%22%3EError%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                    </div>
+
+                    {/* Image Info */}
+                    <div className="p-2">
+                      <Input
+                        value={image.label || ''}
+                        onChange={(e) => updateImageField(index, 'label', e.target.value)}
+                        placeholder="Label (optional)"
+                        className="text-xs h-7"
+                      />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {image.id && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteImage(image.id!)}
+                          className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg"
+                          title="Delete image"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Sort indicator */}
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-black/50 text-white text-xs rounded-full">
+                      #{index + 1}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Image by URL */}
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Add Image by URL</h4>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://example.com/image.jpg"
+                  className="flex-1"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddImageByUrl();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleAddImageByUrl}
+                  isLoading={isUploading}
+                  disabled={isUploading || !imageUrlInput.trim()}
+                >
+                  <Plus size={16} className="mr-1" />
+                  Add
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 pt-4 border-t border-gray-200 dark:border-slate-700">

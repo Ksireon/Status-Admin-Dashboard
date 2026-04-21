@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { User, Mail, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { User, Mail, Search, ChevronLeft, ChevronRight, Eye, Download } from 'lucide-react';
 import Link from 'next/link';
 import { RoleGuard } from '@/components/guards/RoleGuard';
 
@@ -31,52 +32,75 @@ export default function CustomersPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const toast = useToast();
+
+  const fetchCustomers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      params.append('role', 'USER');
+      params.append('page', page.toString());
+      params.append('limit', '10');
+      if (search) params.append('q', search);
+      
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const response: any = await api.get(`/admin/users${queryString}`);
+      
+      // Handle different response formats
+      if (response && Array.isArray(response.data)) {
+        setCustomers(response.data);
+        setMeta(response.meta || { total: response.data.length, page: 1, limit: 10, totalPages: 1 });
+      } else if (response && response.data && Array.isArray(response.data.data)) {
+        // Double wrapped response
+        setCustomers(response.data.data);
+        setMeta(response.data.meta || { total: response.data.data.length, page: 1, limit: 10, totalPages: 1 });
+      } else if (Array.isArray(response)) {
+        // Direct array response
+        setCustomers(response);
+        setMeta({ total: response.length, page: 1, limit: 10, totalPages: 1 });
+      } else {
+        setError('Unexpected data format from server');
+        setCustomers([]);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch customers');
+      setCustomers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, search]);
 
   useEffect(() => {
-    const fetchCustomers = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const params = new URLSearchParams();
-        params.append('role', 'USER');
-        params.append('page', page.toString());
-        params.append('limit', '10');
-        if (search) params.append('q', search);
-        
-        const queryString = params.toString() ? `?${params.toString()}` : '';
-        console.log('Fetching customers:', `/admin/users${queryString}`);
-        
-        const response: any = await api.get(`/admin/users${queryString}`);
-        console.log('Customers response:', response);
-        
-        // Handle different response formats
-        if (response && Array.isArray(response.data)) {
-          setCustomers(response.data);
-          setMeta(response.meta || { total: response.data.length, page: 1, limit: 10, totalPages: 1 });
-        } else if (response && response.data && Array.isArray(response.data.data)) {
-          // Double wrapped response
-          setCustomers(response.data.data);
-          setMeta(response.data.meta || { total: response.data.data.length, page: 1, limit: 10, totalPages: 1 });
-        } else if (Array.isArray(response)) {
-          // Direct array response
-          setCustomers(response);
-          setMeta({ total: response.length, page: 1, limit: 10, totalPages: 1 });
-        } else {
-          console.error('Unexpected response format:', response);
-          setError('Unexpected data format from server');
-          setCustomers([]);
-        }
-      } catch (err: any) {
-        console.error('Failed to fetch customers:', err);
-        setError(err.message || 'Failed to fetch customers');
-        setCustomers([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchCustomers();
-  }, [page, search]);
+  }, [fetchCustomers]);
+
+  const handleExport = () => {
+    const csvContent = [
+      ['ID', 'Name', 'Email', 'Phone', 'Status'],
+      ...customers.map(c => [
+        c.id,
+        c.name || '',
+        c.email,
+        c.phone || '',
+        c.isActive ? 'Active' : 'Inactive',
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `customers_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Export complete', `${customers.length} customers exported`);
+  };
 
   if (isLoading) {
     return (
@@ -104,6 +128,10 @@ export default function CustomersPage() {
       <div>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Customers</h1>
+          <Button variant="secondary" onClick={handleExport}>
+            <Download size={18} className="mr-2" />
+            Export
+          </Button>
         </div>
 
         <Card>

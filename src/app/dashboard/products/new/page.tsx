@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Category } from '@/lib/types';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProductFormData {
@@ -32,6 +32,7 @@ export default function NewProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState('');
+  const [imageUrlInput, setImageUrlInput] = useState('');
 
   const [formData, setFormData] = useState<ProductFormData>({
     categoryId: '',
@@ -97,34 +98,29 @@ export default function NewProductPage() {
       if (productId && formData.images.length > 0) {
         for (const image of formData.images) {
           if (image.file) {
-            // Upload file using multipart/form-data
+            // Upload file using multipart/form-data - directly to backend
             const formDataUpload = new FormData();
             formDataUpload.append('image', image.file);
             formDataUpload.append('label', image.label || '');
 
-            const uploadResponse = await fetch(
-              `/api/admin/products/${productId}/images/upload`,
-              {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                },
-                body: formDataUpload,
-              },
-            );
-
-            if (!uploadResponse.ok) {
-              const errorData = await uploadResponse
-                .json()
-                .catch(() => ({ message: 'Upload failed' }));
-              console.error('Image upload failed:', errorData);
+            try {
+              await api.uploadFile(`/admin/products/${productId}/images/upload`, formDataUpload);
+            } catch (err: any) {
+              console.error('Image upload failed:', err);
             }
           } else if (image.url) {
             // Add URL-based image
-            await api.post(`/admin/products/${productId}/images`, {
-              url: image.url,
-              label: image.label,
-            });
+            try {
+              console.log('Adding image URL:', image.url);
+              const result = await api.post(`/admin/products/${productId}/images`, {
+                url: image.url,
+                label: image.label,
+              });
+              console.log('Image URL added result:', result);
+            } catch (err: any) {
+              console.error('Failed to add image URL:', err);
+              setError(`Failed to add image URL: ${err.message}`);
+            }
           }
         }
       }
@@ -155,6 +151,39 @@ export default function NewProductPage() {
       newImages.splice(index, 1);
       return { ...prev, images: newImages };
     });
+  };
+
+  const handleAddImageByUrl = () => {
+    const url = imageUrlInput.trim();
+    
+    if (!url) {
+      setError('Please enter an image URL');
+      return;
+    }
+
+    // Validate URL format
+    let validatedUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      // If URL doesn't have protocol, add https://
+      validatedUrl = 'https://' + url;
+    }
+
+    try {
+      new URL(validatedUrl);
+    } catch {
+      setError('Please enter a valid URL (e.g., https://example.com/image.jpg)');
+      return;
+    }
+
+    // Add image to form data
+    setFormData((prev) => ({
+      ...prev,
+      images: [...prev.images, { url: validatedUrl, label: '' }],
+    }));
+
+    // Clear input
+    setImageUrlInput('');
+    setError('');
   };
 
   if (isFetching) {
@@ -400,6 +429,34 @@ export default function NewProductPage() {
               onImageRemove={handleImageRemove}
               images={formData.images}
             />
+
+            {/* Add Image by URL */}
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Add Image by URL</h4>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://example.com/image.jpg"
+                  className="flex-1"
+                  value={imageUrlInput}
+                  onChange={(e) => setImageUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddImageByUrl();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleAddImageByUrl}
+                  disabled={!imageUrlInput.trim()}
+                >
+                  <Plus size={16} className="mr-1" />
+                  Add
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 pt-4 border-t border-gray-200 dark:border-slate-700">

@@ -126,6 +126,17 @@ export function ImageUpload({ onImageUpload, onImageRemove, images }: ImageUploa
                     src={image.preview || image.url}
                     alt={image.label}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // If image fails to load, show fallback
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('div');
+                        fallback.className = 'w-full h-full flex flex-col items-center justify-center bg-gray-200 dark:bg-slate-600';
+                        fallback.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 mb-2"><line x1="12" y1="2" x2="12" y2="22"></line><path d="M20 7l-8-5-8 5"></path><path d="M20 17l-8 5-8-5"></path></svg><span class="text-xs text-gray-500">Load Error</span>';
+                        parent.appendChild(fallback);
+                      }
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">

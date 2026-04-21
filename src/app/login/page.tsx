@@ -29,15 +29,10 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      console.log('Attempting login...', { email });
-      const response = await api.login(email, password);
-      console.log('Login successful:', response.user);
-      
+      await api.login(email, password);
       // Use window.location for full page navigation to /dashboard
-      console.log('Redirecting to dashboard...');
       window.location.href = '/dashboard';
     } catch (err: any) {
-      console.error('Login error:', err);
       setError(err.message || 'Invalid credentials');
       setIsLoading(false);
     }

@@ -27,34 +27,39 @@ export function hasRole(
 // Это решает проблему Mixed Content (HTTPS → HTTP)
 export const API_URL = '/api';
 
-// URL для статических файлов (картинки) - без /api префикса
+// Бэкенд URL для изображений
+const BACKEND_URL = 'http://64.112.127.107:3000';
+
+// URL для статических файлов (картинки)
+// Возвращает относительный путь для работы через Next.js proxy
+// Это решает проблемы CORS и Mixed Content
 export const getImageUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
   
-  // Если URL уже полный (начинается с http)
-  if (url.startsWith('http')) {
-    // Заменяем localhost:3001/3000 и IP на относительный URL
-    // чтобы Next.js proxy сработал через /uploads
-    if (url.includes('localhost:3000/uploads/') || 
-        url.includes('localhost:3001/uploads/') ||
-        /http:\/\/\d+\.\d+\.\d+\.\d+:3000\/uploads\//.test(url)) {
-      // Извлекаем путь после /uploads/
-      const match = url.match(/\/uploads\/(.+)$/);
-      if (match) {
-        return `/uploads/${match[1]}`;
-      }
+  // Trim whitespace
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) return null;
+  
+  // Если URL уже полный (начинается с http или https)
+  if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+    // Для внешних URL - возвращаем как есть
+    // Проверяем, является ли это URL нашего бэкенда
+    const uploadsMatch = trimmedUrl.match(/\/uploads\/(.+)$/);
+    if (uploadsMatch && (trimmedUrl.includes('localhost:3000') || trimmedUrl.includes('64.112.127.107:3000'))) {
+      // Это URL нашего бэкенда - используем относительный путь
+      return `/uploads/${uploadsMatch[1]}`;
     }
-    return url;
+    // Внешний URL - возвращаем как есть
+    return trimmedUrl;
   }
   
-  // Если URL относительный (начинается с /), оставляем как есть
-  // Next.js rewrite перенаправит на правильный сервер
-  if (url.startsWith('/')) {
-    return url;
+  // Если URL относительный (начинается с /)
+  if (trimmedUrl.startsWith('/')) {
+    return trimmedUrl;
   }
   
-  // Если URL без слеша в начале, добавляем /uploads/
-  return `/uploads/products/${url}`;
+  // Если URL без слеша в начале - считаем что это имя файла
+  return `/uploads/products/${trimmedUrl}`;
 };
 
 export const OrderStatus = {

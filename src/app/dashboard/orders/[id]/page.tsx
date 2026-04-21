@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import { Order, OrderStatusType } from '@/lib/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { OrderStatusLabels, OrderStatusColors, getImageUrl } from '@/lib/constants';
-import { ArrowLeft, Package, User, MapPin, CreditCard } from 'lucide-react';
+import { getLocalizedName } from '@/lib/utils';
+import { ArrowLeft, Package, User, MapPin, CreditCard, Printer, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 
@@ -15,7 +17,9 @@ const statusFlow: OrderStatusType[] = ['PENDING', 'PROCESSING', 'DELIVERING', 'C
 
 export default function OrderDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { hasRole } = useAuth();
+  const toast = useToast();
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -24,17 +28,16 @@ export default function OrderDetailPage() {
     const fetchOrder = async () => {
       try {
         const orderData = await api.get<Order>(`/admin/orders/${params.id}`);
-        console.log('Order data:', orderData);
-        console.log('Order items:', orderData.items);
         setOrder(orderData);
       } catch (error) {
-        console.error('Failed to fetch order:', error);
+        toast.error('Failed to load order', 'Order not found or access denied');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchOrder();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   const updateStatus = async (newStatus: OrderStatusType) => {
@@ -43,11 +46,21 @@ export default function OrderDetailPage() {
     try {
       await api.patch(`/admin/orders/${order.id}/status`, { status: newStatus });
       setOrder({ ...order, status: newStatus });
-    } catch (error) {
-      console.error('Failed to update status:', error);
+      toast.success('Status updated', `Order marked as ${OrderStatusLabels[newStatus]}`);
+    } catch (error: any) {
+      toast.error('Failed to update status', error.message || 'Please try again');
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportPDF = () => {
+    // Placeholder for PDF export functionality
+    toast.info('PDF Export', 'This feature is coming soon');
   };
 
   const formatCurrency = (value: number | undefined) => {
@@ -91,16 +104,28 @@ export default function OrderDetailPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/dashboard/orders" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-          <ArrowLeft size={20} />
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Order #{order.shortId}
-        </h1>
-        <span className={`px-3 py-1 rounded-full text-sm font-medium ${OrderStatusColors[order.status]}`}>
-          {OrderStatusLabels[order.status]}
-        </span>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/orders" className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+            <ArrowLeft size={20} />
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Order #{order.shortId}
+          </h1>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${OrderStatusColors[order.status]}`}>
+            {OrderStatusLabels[order.status]}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={handlePrint}>
+            <Printer size={18} className="mr-2" />
+            Print
+          </Button>
+          <Button variant="secondary" onClick={handleExportPDF}>
+            <Download size={18} className="mr-2" />
+            PDF
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -138,7 +163,7 @@ export default function OrderDetailPage() {
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white truncate">
-                      {item.nameSnapshot?.ru || item.nameSnapshot?.uz || item.nameSnapshot?.en || 'Unknown Product'}
+                      {getLocalizedName(item.nameSnapshot, 'Unknown Product')}
                     </p>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mt-1">
                       <span>Quantity: <span className="font-medium text-gray-700 dark:text-gray-300">{item.quantity}</span></span>
