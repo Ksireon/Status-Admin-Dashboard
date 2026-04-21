@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Category } from '@/lib/types';
+import { getLocalizedName } from '@/lib/utils';
 import { FolderOpen, Plus, Edit, Trash2, X, Check } from 'lucide-react';
 import { RoleGuard } from '@/components/guards/RoleGuard';
 
@@ -97,11 +98,12 @@ export default function CategoriesPage() {
 
   const startEdit = (category: Category) => {
     setEditingId(category.id);
+    const localizedName = typeof category.name === 'string' ? { ru: category.name, uz: '', en: '' } : category.name;
     setFormData({
       slug: category.slug,
-      nameRu: category.name.ru,
-      nameUz: category.name.uz,
-      nameEn: category.name.en,
+      nameRu: localizedName?.ru || '',
+      nameUz: localizedName?.uz || '',
+      nameEn: localizedName?.en || '',
     });
   };
 
@@ -263,7 +265,7 @@ export default function CategoriesPage() {
                         <FolderOpen size={24} className="text-accent-blue" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{category.name.ru}</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{getLocalizedName(category.name, 'Unnamed')}</h3>
                         <p className="text-sm text-gray-500">/{category.slug}</p>
                       </div>
                     </div>
@@ -286,8 +288,12 @@ export default function CategoriesPage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Translations:</span>
                       <div className="flex gap-2">
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">RU: {category.name.ru}</span>
-                        <span className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">UZ: {category.name.uz}</span>
+                        {typeof category.name !== 'string' && (
+                          <>
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">RU: {category.name.ru}</span>
+                            <span className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">UZ: {category.name.uz}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

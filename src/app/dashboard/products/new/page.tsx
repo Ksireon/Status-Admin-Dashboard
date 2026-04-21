@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Category } from '@/lib/types';
+import { getLocalizedName } from '@/lib/utils';
 import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 
@@ -235,7 +236,7 @@ export default function NewProductPage() {
                 <option value="">Select category</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
-                    {cat.name.ru}
+                    {getLocalizedName(cat.name, 'Unnamed')}
                   </option>
                 ))}
               </select>

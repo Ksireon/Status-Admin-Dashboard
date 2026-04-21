@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Shop } from '@/lib/types';
+import { getLocalizedName } from '@/lib/utils';
 import { Building2, MapPin, Phone, Clock, Plus, Edit, Trash2, X, Check } from 'lucide-react';
 import { RoleGuard } from '@/components/guards/RoleGuard';
 
@@ -108,11 +109,12 @@ export default function BranchesPage() {
 
   const startEdit = (shop: Shop) => {
     setEditingId(shop.id);
+    const localizedName = typeof shop.name === 'string' ? { ru: shop.name, uz: '', en: '' } : shop.name;
     setFormData({
       key: shop.key,
-      nameRu: shop.name.ru,
-      nameUz: shop.name.uz,
-      nameEn: shop.name.en,
+      nameRu: localizedName?.ru || '',
+      nameUz: localizedName?.uz || '',
+      nameEn: localizedName?.en || '',
       city: shop.city,
       address: shop.address,
       phone: shop.phone,
@@ -383,7 +385,7 @@ export default function BranchesPage() {
                         <Building2 size={24} className="text-accent-blue" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{shop.name.ru}</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{getLocalizedName(shop.name, 'Unnamed Branch')}</h3>
                         <p className="text-sm text-gray-500">Key: {shop.key}</p>
                       </div>
                     </div>

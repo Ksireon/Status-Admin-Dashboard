@@ -139,7 +139,7 @@ export default function OrderDetailPage() {
                     {item.imageSnapshot ? (
                       <img
                         src={getImageUrl(item.imageSnapshot) || ''}
-                        alt={item.nameSnapshot?.ru || 'Product'}
+                        alt={getLocalizedName(item.nameSnapshot, 'Product')}
                         className="w-full h-full rounded-lg object-cover"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';

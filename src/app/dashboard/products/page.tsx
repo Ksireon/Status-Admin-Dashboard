@@ -126,7 +126,7 @@ export default function ProductsPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await api.get('/admin/categories');
+        const response: any = await api.get('/admin/categories');
         if (Array.isArray(response)) {
           setCategories(response);
         } else if (response && Array.isArray(response.data)) {

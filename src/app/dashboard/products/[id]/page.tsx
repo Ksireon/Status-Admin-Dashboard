@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Product, Category } from '@/lib/types';
+import { getLocalizedName } from '@/lib/utils';
 import { ArrowLeft, Plus, Trash2, Upload, X, GripVertical } from 'lucide-react';
 import Link from 'next/link';
 import { getImageUrl } from '@/lib/constants';
@@ -64,15 +65,18 @@ export default function EditProductPage() {
         
         setCategories(categoriesData);
         
+        const localizedName = typeof productData.name === 'string' ? { ru: productData.name, uz: '', en: '' } : productData.name;
+        const localizedDesc = typeof productData.description === 'string' ? { ru: productData.description, uz: '', en: '' } : productData.description;
+        
         setFormData({
           categoryId: productData.categoryId,
           type: productData.type,
-          nameRu: productData.name.ru || '',
-          nameUz: productData.name.uz || '',
-          nameEn: productData.name.en || '',
-          descriptionRu: productData.description?.ru || '',
-          descriptionUz: productData.description?.uz || '',
-          descriptionEn: productData.description?.en || '',
+          nameRu: localizedName?.ru || '',
+          nameUz: localizedName?.uz || '',
+          nameEn: localizedName?.en || '',
+          descriptionRu: localizedDesc?.ru || '',
+          descriptionUz: localizedDesc?.uz || '',
+          descriptionEn: localizedDesc?.en || '',
           price: productData.price,
           stockQuantity: productData.stockQuantity,
           isActive: productData.isActive,
@@ -308,7 +312,7 @@ export default function EditProductPage() {
                 <option value="">Select category</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
-                    {cat.name.ru}
+                    {getLocalizedName(cat.name, 'Unnamed')}
                   </option>
                 ))}
               </select>
